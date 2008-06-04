@@ -1,12 +1,12 @@
 #ifndef TARGETARROW_H
 #define TARGETARROW_H
 
-#include "Movable.h"
+#include "GameObject.h"
 
 
 class Ship;
 
-class TargetArrow : public Movable
+class TargetArrow : public GameObject
 {
 public:
 

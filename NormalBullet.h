@@ -1,13 +1,13 @@
 #ifndef NORMALBULLET_H
 #define NORMALBULLET_H
 
-#include "Movable.h"
 #include "Helper.h"
+#include "GameObject.h"
 
 class Timer;
 class RandomExplosionEmitter;
 
-class NormalBullet : public Movable
+class NormalBullet : public GameObject
 {
 public:
 
@@ -26,7 +26,7 @@ public:
 		return kObjectNormalBullet;
 	}
 
-	void Shoot (const Vector2& initialPosition,
+	void Shoot (const mth::Vector2& initialPosition,
 		float rotation, float velocity);
 
 	bool IsShot() const

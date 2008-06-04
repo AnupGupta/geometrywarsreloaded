@@ -7,6 +7,8 @@
 #include "RemoveRenderableEvent.h"
 #include "AddRenderableEvent.h"
 #include "Texture.h"
+#include "Movable.h"
+#include "Renderable.h"
 #include <omp.h>
 
 using namespace mth;
@@ -58,6 +60,8 @@ ParticleEmitter::~ParticleEmitter()
 **/
 bool ParticleEmitter::Init()
 {
+	m_pMovable = new Movable(*this);
+
 	m_pParticleCreateTimer = new Timer(m_fEmitRate, true);
 	m_pLifeTimer = new Timer(m_fSystemLife);
 
@@ -129,7 +133,7 @@ void ParticleEmitter::Update()
 **/
 void ParticleEmitter::UpdateTimeDependent(float dt)
 {
-	Movable::UpdateTimeDependent(dt);
+	GameObject::UpdateTimeDependent(dt);
 
 	if (!m_bKillSystem && m_bEmit)
 	{
@@ -147,7 +151,7 @@ void ParticleEmitter::UpdateTimeDependent(float dt)
 	for (i=0; i<numParticles; i++)
 	{
 		UpdateVelocity(dt, m_pParticles[i]);
-		m_pParticles[i].Update(dt);
+		m_pParticles[i].UpdateTimeDependent(dt);
 	}
 
 	if (m_fSystemLife > 0.0f)

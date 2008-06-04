@@ -1,5 +1,5 @@
 #include "Ship.h"
-
+#include "Movable.h"
 //--------------------------------------------------
 /**
 * Ctor
@@ -41,6 +41,18 @@ void Ship::HandleEvent(Event* const e)
 	
 	
 }
+
+//--------------------------------------------------
+/**
+* Initializes ship
+*
+**/
+bool Ship::Init()
+{
+	m_pMovable = new Movable(*this);
+	return m_pMovable != 0;
+
+}
 //--------------------------------------------------
 /**
 * Resets ship
@@ -48,5 +60,5 @@ void Ship::HandleEvent(Event* const e)
 **/
 void Ship::Reset()
 {
-	Movable::Reset();
+	GameObject::Reset();
 }

@@ -9,7 +9,7 @@
 #include "GameApp.h"
 #include <time.h>
 
-//#define TRACK_MEMORY
+#define TRACK_MEMORY
 
 #ifdef TRACK_MEMORY
 #ifdef _DEBUG

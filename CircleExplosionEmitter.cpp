@@ -7,6 +7,7 @@
 #include "Renderer.h"
 #include "Texture.h"
 #include "Renderable.h"
+#include "Movable.h"
 #include "Helper.h"
 //--------------------------------------------------
 /**
@@ -50,7 +51,7 @@ bool CircleExplosionEmitter::InitCustomized()
 void CircleExplosionEmitter::UpdateTimeDependentCustomized(float dt)
 {
 	
-
+	
 
 }
 
@@ -68,7 +69,7 @@ void CircleExplosionEmitter::SetInitialVelocity(Particle& particle)
 		m_iCurrentParticle = 0;
 
 	Vector2 vel = mth::Helper::AsVector(angle);
-	particle.SetVelocity(vel * 10.0f);
+	particle.GetMovable()->SetVelocity(vel * 10.0f);
 }
 
 //--------------------------------------------------
@@ -78,5 +79,5 @@ void CircleExplosionEmitter::SetInitialVelocity(Particle& particle)
 **/
 void CircleExplosionEmitter::UpdateVelocity(float dt, Particle& particle)
 {
-
+	
 }

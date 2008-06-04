@@ -8,6 +8,7 @@
 #include "Renderer.h"
 #include "Texture.h"
 #include "Renderable.h"
+#include "Movable.h"
 //--------------------------------------------------
 /**
 * Ctor
@@ -102,7 +103,7 @@ void MultiExplosionEmitter::SetInitialVelocity(Particle& particle)
 	float vx = (float)(rand()%10 - 5);
 	float vy = (float)(rand()%10 - 5);
 
-	particle.SetVelocity(Vector2(vx, vy));
+	particle.GetMovable()->SetVelocity(Vector2(vx, vy));
 }
 
 //--------------------------------------------------

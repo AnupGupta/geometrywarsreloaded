@@ -1,18 +1,17 @@
 #ifndef SHIP_H
 #define SHIP_H
 
-#include "Movable.h"
 #include "EventListener.h"
+#include "GameObject.h"
 
-
-class Ship : public Movable, public EventListener
+class Ship : public GameObject, public EventListener
 {
 public:
 
 	Ship();
 	virtual ~Ship();
 
-	virtual bool Init() = 0;
+	virtual bool Init();
 	virtual void Shutdown() = 0;
 	virtual void Reset();
 	virtual void Update() = 0;
