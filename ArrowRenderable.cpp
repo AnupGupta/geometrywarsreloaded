@@ -53,7 +53,6 @@ void ArrowRenderable::Render()
 	const Vector2& position = m_rParent.GetPosition();
 	float rotation = m_rParent.GetRotation();
 
-	glColor3f(1.0f, 0.0f, 0.0f);
 	glPushMatrix();
 	glTranslatef(position.x, position.y, 0.0f);
 	glRotatef(rotation, 0.0f, 0.0f, 1.0f);

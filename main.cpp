@@ -1,15 +1,23 @@
+
+#define WIN32_LEAN_AND_MEAN
+
 #include <windows.h>
+#include <stdlib.h>
 #include <GL/glut.h> 
 #include "Renderer.h"
 #include "InputManager.h"
 #include "GameApp.h"
 #include <time.h>
 
-#define TRACK_MEMORY
+//#define TRACK_MEMORY
 
 #ifdef TRACK_MEMORY
+#ifdef _DEBUG
 #include <vld.h>
 #endif
+#endif
+
+
 
 //--------------------------------------------------
 /**
@@ -95,6 +103,18 @@ void KeyUp(unsigned char key, int x, int y) {
 
 //--------------------------------------------------
 /**
+* Handles passive mouse motion
+*
+**/
+
+void processMousePassiveMotion(int x, int y) {
+
+	if (g_pGame)
+		g_pGame->GetInputManager()->MousePassiveMotion(x, y);
+}
+
+//--------------------------------------------------
+/**
 * Idle Func
 *
 **/
@@ -129,6 +149,7 @@ void main(int argc, char **argv) {
 	glutIdleFunc(Idle);
 	glutKeyboardFunc(KeyDown);
 	glutKeyboardUpFunc(KeyUp);
+	glutPassiveMotionFunc(processMousePassiveMotion);
 	glutDisplayFunc(Render);
 
 	// Here is our new entry in the main function 

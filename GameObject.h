@@ -62,8 +62,7 @@ public:
 			t == kObjectMainShip ||
 			t == kObjectNormalBullet ||
 			t == kObjectTargetArrow ||
-			t == kObjectParticleEmitter ||
-			t == kObjectParticle);
+			t == kObjectParticleEmitter);
 	}
 	
 	Renderable* GetRenderable() const

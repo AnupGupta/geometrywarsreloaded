@@ -19,7 +19,13 @@ public:
 	bool Init();
 	void Render();
 	
+	void SetParticleSize(float size)
+	{
+		if (size <= m_fMaxParticleSize)
+			m_fParticleSize = size;
+	}
 
+	
 private:
 
 	unsigned int m_uiVBO;
@@ -28,6 +34,9 @@ private:
 	unsigned int m_uiNumParticles;
 	float*       m_pParticlePositions;
 	float*       m_pParticleColors;
+	float        m_fMaxParticleSize;
+	float        m_fParticleSize;
+
 
 	// VBO Extension Function Pointers
 	// VBO Name Generation Procedure
@@ -44,6 +53,8 @@ private:
 	PFNGLUNMAPBUFFERARBPROC glUnmapBufferARB;
 	// VBO subdata
 	PFNGLBUFFERSUBDATAPROC glBufferSubData;
+	PFNGLPOINTPARAMETERFARBPROC  glPointParameterfARB;
+	PFNGLPOINTPARAMETERFVARBPROC glPointParameterfvARB;
 	
 	void UpdateParticlePositions();
 	void UpdateParticleColors();

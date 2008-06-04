@@ -2,18 +2,20 @@
 #define PARTICLEEMITTER_H
 
 #include "Movable.h"
+#include "Timer.h"
 
 class Particle;
-class Timer;
+class Texture;
 
 class ParticleEmitter : public Movable
 {
 public:
 
-	ParticleEmitter(float emitRate,
-		float particleLife, float systemLife);
+	ParticleEmitter(float emitRate, unsigned int particlesPerTick,
+		float particleLife, float particleSize = 20.0f, 
+		Texture* particleTexture = 0, float systemLife = -1.0f);
 
-	~ParticleEmitter();
+	virtual ~ParticleEmitter();
 
 	bool Init();
 	void Update();
@@ -31,7 +33,31 @@ public:
 		return m_pParticles;
 	}
 
-private:
+	void StopEmitting()
+	{
+		m_bEmit = false;
+	}
+
+	void StartEmitting()
+	{
+		m_bEmit = true;
+	}
+
+	void SetParticleTexture(Texture* texture);
+
+	void SetSystemLife(float systemLife)
+	{
+		m_fSystemLife = systemLife;
+		m_pLifeTimer->SetTickInterval(systemLife);
+		m_bKillSystem = false;
+	}
+
+	void SetKeepAlive (bool value)
+	{
+		m_bKeepAlive = value;
+	}
+
+protected:
 
 	Timer* m_pParticleCreateTimer;
 	Timer* m_pLifeTimer;
@@ -39,12 +65,24 @@ private:
 	float        m_fEmitRate;
 	float        m_fParticleLife;
 	unsigned int m_uiNumParticles;
+	unsigned int m_uiParticlesPerTick;
 	float        m_fSystemLife;
+	bool         m_bKillSystem;
+	bool         m_bEmit;
+	bool         m_bKeepAlive;
 	Particle*    m_pParticles;
+	Texture*     m_pParticleTexture;
+	float        m_fParticleSize;
+	bool         m_bIsRendered;
 
+	bool AreAllParticlesDead();
 	void ShootParticles();
-	virtual void SetInitialVelocity(Particle& particle);
-	virtual void UpdateVelocity(float dt, Particle& particle);
+
+	virtual bool InitCustomized() { return true; }
+	virtual void UpdateCustomized(){}
+	virtual void UpdateTimeDependentCustomized(float dt){}
+	virtual void SetInitialVelocity(Particle& particle) = 0;
+	virtual void UpdateVelocity(float dt, Particle& particle) = 0;
 	
 };
 

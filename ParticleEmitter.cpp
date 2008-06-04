@@ -2,9 +2,12 @@
 #include "EventManager.h"
 #include "RemoveObjectEvent.h"
 #include "Helper.h"
-#include "Timer.h"
 #include "Particle.h"
 #include "ParticleSystemRenderable.h"
+#include "RemoveRenderableEvent.h"
+#include "AddRenderableEvent.h"
+#include "Texture.h"
+#include <omp.h>
 
 using namespace mth;
 //--------------------------------------------------
@@ -13,7 +16,10 @@ using namespace mth;
 *
 **/
 ParticleEmitter::ParticleEmitter(float emitRate, 
+								 unsigned int particlesPerTick,
 								 float particleLife,
+								 float particleSize,
+								 Texture* particleTexture,
 								 float systemLife)
 : m_pParticleCreateTimer(0),
   m_pLifeTimer(0),
@@ -21,7 +27,14 @@ ParticleEmitter::ParticleEmitter(float emitRate,
   m_fParticleLife(particleLife),
   m_fSystemLife(systemLife),
   m_uiNumParticles(0),
-  m_pParticles(0)
+  m_uiParticlesPerTick(particlesPerTick),
+  m_pParticles(0),
+  m_bKillSystem(false),
+  m_bEmit(true),
+  m_bKeepAlive(false),
+  m_pParticleTexture(particleTexture),
+  m_fParticleSize(particleSize),
+  m_bIsRendered(false)
 {
 
 }
@@ -50,7 +63,7 @@ bool ParticleEmitter::Init()
 
 	if (m_fEmitRate > 0.0f)
 	{
-		m_uiNumParticles = (unsigned int)(m_fParticleLife / m_fEmitRate) + 1;
+		m_uiNumParticles = (unsigned int)(m_uiParticlesPerTick * m_fParticleLife / m_fEmitRate) + 1;
 		m_pParticles = new Particle[m_uiNumParticles];
 		
 	}
@@ -60,7 +73,16 @@ bool ParticleEmitter::Init()
 	}
 	 
 	m_pRenderable = new ParticleSystemRenderable(*this, m_uiNumParticles);
-	return m_bInitialized = true;
+	if (m_pParticleTexture)
+	{
+		m_pRenderable->SetTexture(m_pParticleTexture);
+	}
+
+	(static_cast<ParticleSystemRenderable*>(m_pRenderable))->SetParticleSize(m_fParticleSize);
+
+	m_bIsRendered = true;
+
+	return m_bInitialized = InitCustomized();
 }
 
 //--------------------------------------------------
@@ -70,7 +92,33 @@ bool ParticleEmitter::Init()
 **/
 void ParticleEmitter::Update()
 {
-	
+	if (m_bKillSystem)
+	{
+		if (AreAllParticlesDead())
+		{
+			if (m_bIsRendered)
+			{
+				EventManager::GetInstance()->AddEvent(new RemoveRenderableEvent(m_pRenderable));
+				m_bIsRendered = false;
+			}
+			
+			if (!m_bKeepAlive)
+				Shutdown();
+		}
+	}
+	else if (!m_bEmit)
+	{
+		if (m_bIsRendered)
+		{
+			if (AreAllParticlesDead())
+			{
+				EventManager::GetInstance()->AddEvent(new RemoveRenderableEvent(m_pRenderable));
+				m_bIsRendered = false;
+			}
+		}
+	}
+
+	UpdateCustomized();
 }
 
 
@@ -83,25 +131,39 @@ void ParticleEmitter::UpdateTimeDependent(float dt)
 {
 	Movable::UpdateTimeDependent(dt);
 
-	m_pLifeTimer->Update(dt);
-	if (m_pLifeTimer->Tick())
+	if (!m_bKillSystem && m_bEmit)
 	{
-		Shutdown();
-		return;
+		m_pParticleCreateTimer->Update(dt);
+
+		if (m_pParticleCreateTimer->Tick())
+		{
+			ShootParticles();
+		}
 	}
-
-	m_pParticleCreateTimer->Update(dt);
-
-	if (m_pParticleCreateTimer->Tick())
-	{
-		ShootParticles();
-	}
-
-	for (unsigned int i=0; i<m_uiNumParticles; i++)
+	
+	int i=0; int numParticles = m_uiNumParticles;
+	
+	#pragma omp parallel for
+	for (i=0; i<numParticles; i++)
 	{
 		UpdateVelocity(dt, m_pParticles[i]);
 		m_pParticles[i].Update(dt);
 	}
+
+	if (m_fSystemLife > 0.0f)
+	{
+		m_pLifeTimer->Update(dt);
+		if (m_pLifeTimer->Tick())
+		{
+			m_bKillSystem = true;
+			
+		}
+	}
+	
+
+	UpdateTimeDependentCustomized(dt);
+	
+
 }
 
 //--------------------------------------------------
@@ -123,6 +185,24 @@ void ParticleEmitter::Reset()
 {
 	m_pParticleCreateTimer->Reset();
 	m_pLifeTimer->Reset();
+	m_bIsRendered = true;
+}
+//--------------------------------------------------
+/**
+* Checks if all particles in the system are dead
+*
+**/
+bool ParticleEmitter::AreAllParticlesDead()
+{
+	for (unsigned int i=0; i<m_uiNumParticles; i++)
+	{
+		if (!m_pParticles[i].Dead())
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 //--------------------------------------------------
@@ -132,37 +212,38 @@ void ParticleEmitter::Reset()
 **/
 void ParticleEmitter::ShootParticles()
 {
-	for (unsigned int i=0; i<m_uiNumParticles; i++)
+	if (!m_bIsRendered)
+	{
+		EventManager::GetInstance()->AddEvent(new AddRenderableEvent(m_pRenderable));
+		m_bIsRendered = true;
+	}
+	
+	unsigned int generated = 0;
+	for (unsigned int i=0; i<m_uiNumParticles && generated < m_uiParticlesPerTick; i++)
 	{
 		if (m_pParticles[i].Dead())
 		{
 			m_pParticles[i].SetPosition(m_vPosition);
-			m_pParticles[i].SetEnergy(m_fParticleLife);
+			m_pParticles[i].SetTotalEnergy(m_fParticleLife);
 			SetInitialVelocity(m_pParticles[i]);
 			m_pParticles[i].MakeAlive();
-			return;
+			generated++;
 		}
 	}
+	
 }
 
 //--------------------------------------------------
 /**
-* Sets initial velocity for a particle
+* Sets new particle texture
 *
 **/
-void ParticleEmitter::SetInitialVelocity(Particle& particle)
+void ParticleEmitter::SetParticleTexture(Texture* texture)
 {
-	float v = (float)(rand()%5);
-	particle.SetVelocity(m_vVelocity + Vector2(v, v));
-}
+	m_pParticleTexture = texture;
 
-//--------------------------------------------------
-/**
-* Updates velocities for particles
-*
-**/
-void ParticleEmitter::UpdateVelocity(float dt, Particle& particle)
-{
-	const Vector2& vel = particle.GetVelocity();
-	particle.SetVelocity(vel + Vector2(0.0, -90.8*dt));
+	if (texture && m_pRenderable)
+	{
+		m_pRenderable->SetTexture(texture);
+	}
 }

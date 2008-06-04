@@ -9,7 +9,10 @@
 #include "RemoveRenderableEvent.h"
 #include "RemoveObjectEvent.h"
 #include "TargetArrow.h"
+#include "MainShipTrailEmitter.h"
 #include <windows.h>
+#include "Renderer.h"
+#include "Timer.h"
 #include <gl\glut.h>
 //--------------------------------------------------
 /**
@@ -27,8 +30,12 @@ MainShip::MainShip()
   m_bStopMoveLeft(false),
   m_bStopMoveRight(false),
   m_bAlive(true),
+  m_fPrevMouseX(0.0f),
+  m_fPrevMouseY(0.0f),
   m_numBullets(10),
-  m_pTargetArrow(0)
+  m_pTargetArrow(0),
+  m_pTrail(0),
+  m_pShootTimer(0)
 {
 
 }
@@ -40,7 +47,8 @@ MainShip::MainShip()
 **/
 MainShip::~MainShip()
 {
-
+	if (m_pShootTimer)
+		delete m_pShootTimer;
 }
 
 //--------------------------------------------------
@@ -51,7 +59,7 @@ MainShip::~MainShip()
 bool MainShip::Init()
 {
 	m_pRenderable = new MainShipRenderable(*this);
-
+	m_pRenderable->SetTexture(Renderer::GetInstance()->GetTexture("ship"));
 	
 	for (int i=0; i<m_numBullets; i++)
 	{	
@@ -74,6 +82,12 @@ bool MainShip::Init()
 
 	m_pTargetArrow->SetParentShip(this);
 
+	m_pTrail = new MainShipTrailEmitter(this, 0.02, 3, 0.5);
+
+	EventManager::GetInstance()->AddEvent(new AddObjectEvent(m_pTrail));
+
+	m_pShootTimer = new Timer(0.2f, true);
+
 	return m_bInitialized = true;
 }
 
@@ -86,6 +100,7 @@ bool MainShip::Init()
 **/
 void MainShip::Update()
 {
+	m_pTrail->SetPosition(m_vPosition - Vector2(0.0f, 2.0f));
 	float shipSpeed = 10.0f;
 	if (m_bMoveUp && !m_bStopMoveUp)
 	{
@@ -113,9 +128,35 @@ void MainShip::Update()
 		SetVelocity(Vector2(0.0f, m_vVelocity.y));
 	}
 
-	
+	if (m_vVelocity.Length() < 0.01f)
+	{
+		m_pTrail->StopEmitting();
+	}
+	else
+	{
+		m_pTrail->StartEmitting();
+	}
+
+	Vector2 m_vDir = m_vVelocity.Normalized();
+	m_fRotation = atan2(m_vDir.y, m_vDir.x)*mth::TO_DEG;
+
 }
 
+//--------------------------------------------------
+/**
+* Updates timers
+*
+**/
+void MainShip::UpdateTimeDependent(float dt)
+{
+	Ship::UpdateTimeDependent(dt);
+
+	m_pShootTimer->Update(dt);
+	if (m_pShootTimer->Tick())
+	{
+		//ShootNormal();
+	}
+}
 //--------------------------------------------------
 /**
 * Resets main ship
@@ -198,3 +239,31 @@ void MainShip::ShootNormal()
 	}
 	
 };
+
+//--------------------------------------------------
+/**
+* Moves target arrow
+*
+**/
+void MainShip::TargetChange(int x, int y)
+{
+	double modelview[16];
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	double projection[16];
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	int viewport[4];
+	glGetIntegerv( GL_VIEWPORT, viewport );
+	
+	float winX = (float)x;
+	float winY = (float)viewport[3] - (float)y;
+
+	double posX, posY, posZ;
+	gluUnProject( winX, winY, 0.980981f, modelview, projection, viewport, &posX, &posY, &posZ);
+
+	Vector2 pos(Vector2(posX, posY) - m_vPosition);
+	pos.Normalize();
+	m_fTargetRotation = atan2(pos.y, pos.x) - 1.57079633f;
+
+	m_fPrevMouseX = x;
+	m_fPrevMouseY = y;
+}

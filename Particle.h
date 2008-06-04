@@ -2,6 +2,8 @@
 #define PARTICLE_H
 
 #include "Vector.h"
+#include "Color.h"
+
 
 class Particle 
 {
@@ -12,9 +14,21 @@ public:
 
 	void Update(float dt);
 
-	void SetEnergy(float energy)
+	void SetTotalEnergy(float energy)
 	{
-		m_fEnergy = energy;
+		if (energy > 0.0f)
+		{
+			m_fTotalEnergy = energy;
+			m_fInvTotalEnergy = 1.0f / m_fTotalEnergy;
+			m_fEnergy = energy;
+		}
+		else
+		{
+			m_fTotalEnergy = 1.0f;
+			m_fInvTotalEnergy = 1.0f;
+			m_fEnergy = 0.0f;
+		}
+		
 	}
 
 	void SetVelocity (const mth::Vector2& vel)
@@ -47,12 +61,22 @@ public:
 		return m_vVelocity;
 	}
 
+	void SetColor(const Color& color);
+	const Color& GetColor() const
+	{
+		return m_color;
+	}
+
 private:
 
 	mth::Vector2 m_vVelocity;
 	mth::Vector2 m_vPosition;
 	float m_fEnergy;
+	float m_fTotalEnergy;
+	float m_fInvTotalEnergy;
 	bool  m_bAlive;
+	Color m_color;
+
 
 };
 

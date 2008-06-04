@@ -2,6 +2,9 @@
 #include "Particle.h"
 #include "GameObject.h"
 #include "ParticleEmitter.h"
+#include "Texture.h"
+#include <gl\glut.h>
+#include <gl\glext.h>
 
 //--------------------------------------------------
 /**
@@ -15,9 +18,12 @@ ParticleSystemRenderable::ParticleSystemRenderable(const GameObject& parent,
   m_uiVBOColors(0),
   m_uiNumParticles(numParticles),
   m_pParticlePositions(0),
-  m_pParticleColors(0)
+  m_pParticleColors(0),
+  m_fMaxParticleSize(1.0f)
 {
 
+	// Query for the max point size supported by the hardware
+	glGetFloatv( GL_POINT_SIZE_MAX_ARB, &m_fMaxParticleSize );
 }
 
 //--------------------------------------------------
@@ -61,6 +67,12 @@ bool ParticleSystemRenderable::Init()
 	glBufferSubData = 
 		(PFNGLBUFFERSUBDATAPROC) wglGetProcAddress("glBufferSubData");
 
+	glPointParameterfARB  = 
+		(PFNGLPOINTPARAMETERFARBPROC)wglGetProcAddress("glPointParameterfARB");
+
+	glPointParameterfvARB = 
+		(PFNGLPOINTPARAMETERFVARBPROC)wglGetProcAddress("glPointParameterfvARB");
+
 	
 	m_pParticlePositions = new float[m_uiNumParticles * 2];
 	if (!m_pParticlePositions) return false;
@@ -97,6 +109,7 @@ bool ParticleSystemRenderable::Init()
 	
 	delete [] m_pParticleColors;
 
+	
 	return m_bInitialized = true;
 }
 //--------------------------------------------------
@@ -120,8 +133,9 @@ void ParticleSystemRenderable::UpdateParticlePositions()
 			{
 				const mth::Vector2& pos = particles[i].GetPosition();
 
-				m_pParticlePositions[2*i] = pos.x;
-				m_pParticlePositions[2*i + 1] = pos.y;
+				int index = 2*i;
+				m_pParticlePositions[index] = pos.x;
+				m_pParticlePositions[index + 1] = pos.y;
 
 			}
 
@@ -148,9 +162,13 @@ void ParticleSystemRenderable::UpdateParticleColors()
 		{
 			for (unsigned int i=0; i<m_uiNumParticles; i++)
 			{
-				float energy = particles[i].Dead() ? 0.0f : 1.0f;
-
-				m_pParticleColors[4*i + 3] = energy;
+				int index = 4*i;
+				const Color& color = particles[i].GetColor();
+				const float* const colorVals = color.GetColor();
+				m_pParticleColors[index] = colorVals[0];
+				m_pParticleColors[index+1] = colorVals[1];
+				m_pParticleColors[index+2] = colorVals[2];
+				m_pParticleColors[index+3] = colorVals[3];
 
 			}
 
@@ -167,13 +185,11 @@ void ParticleSystemRenderable::Render()
 {
 	UpdateParticlePositions();
 	UpdateParticleColors();
-	
-	//glColor3f(1.0f, 1.0f, 1.0f);
-	glPointSize(3.0f);
 
+	//glColor3f(1.0f, 1.0f, 1.0f);
 	// bind VBOs for vertex array and index array
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_uiVBO);         // for vertex coordinates
-	
+
 	// do same as vertex array except pointer
 	glEnableClientState(GL_VERTEX_ARRAY);                 // activate vertex coords array
 	glVertexPointer( 2, GL_FLOAT, 0, (char *) 0 );
@@ -181,21 +197,35 @@ void ParticleSystemRenderable::Render()
 	glEnableClientState(GL_COLOR_ARRAY);                 // activate vertex coords array
 	glBindBufferARB( GL_ARRAY_BUFFER_ARB, m_uiVBOColors );
 	glColorPointer( 4, GL_FLOAT, 0, (char *) 0 );		// Set The TexCoord Pointer To The TexCoord Buffer
-	
-	glEnable(GL_POINT_SPRITE);
+
+	glEnable(GL_POINT_SPRITE_ARB);
+	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
+	glPointSize(m_fParticleSize);
+
 	glDrawArrays( GL_POINTS, 0, m_uiNumParticles );	
+	glDisable(GL_POINT_SPRITE_ARB);
+	//glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+	glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_FALSE);
 	glDisable(GL_BLEND);
-	glDisable(GL_POINT_SPRITE);
+	glDepthMask(GL_TRUE);
 
 	glDisableClientState(GL_COLOR_ARRAY);                // deactivate vertex array
 	glDisableClientState(GL_VERTEX_ARRAY);                // deactivate vertex array
 
 	// bind with 0, so, switch back to normal pointer operation
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
 }
+//--------------------------------------------------
+/**
+* Sets the particle size
+*
+**/
+
 
 //--------------------------------------------------
 /**

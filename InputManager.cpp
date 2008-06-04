@@ -112,6 +112,8 @@ void InputManager::ProcessInput()
 
 
 		// mouse
+		
+			
 	}
 }
 //------------------------------------------------------
@@ -161,6 +163,16 @@ void InputManager::KeyUp(unsigned int key, bool bExecuteImmediately)
 	}
 	
 	m_bKeys[key] = false;
+}
+//--------------------------------------------------
+/**
+* Calls callback for passive mouse motion
+*
+**/
+void InputManager::MousePassiveMotion(int x, int y, bool bExecuteImmediately)
+{
+	if (m_PassiveMotionCallback)
+		m_PassiveMotionCallback(x, y);
 }
 //------------------------------------------------------
 /*

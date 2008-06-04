@@ -22,8 +22,10 @@ public:
 		KEY_DOWN
 	};
 
-	// callback function for input events
+	// callback function for key input events
 	typedef Callback(void (void)) InputCallback;
+	// callback function for passive mouse movement events
+	typedef Callback(void (int, int)) InputPassiveMotionCallback;
 
 	// typedef for map<unsigned int, InputCallback>
 	typedef std::map<unsigned int, InputCallback> CallbackMap;
@@ -37,6 +39,10 @@ public:
 
 	void ProcessInput();
 	void Reset();
+	void AssignMousePassiveMotion(InputPassiveMotionCallback callback)
+	{
+		m_PassiveMotionCallback = callback;
+	}
 	void AssignFuncKeyUp(unsigned int keyCode,					
 					InputCallback callback);
 	void AssignFuncKeyDown(unsigned int keyCode,					
@@ -45,6 +51,8 @@ public:
 	void KeyDown (unsigned int key, bool bExecuteImmediately = true);
 
 	void KeyUp   (unsigned int key, bool bExecuteImmediately = true);
+
+	void MousePassiveMotion(int x, int y, bool bExecuteImmediately = true);
 	
 	const bool IsKeyDown (unsigned int key) const
 	{
@@ -69,6 +77,9 @@ private:
 
 	// map of callbacks for key up
 	CallbackMap m_CallbacksKUp;
+
+	// callback for mouse motion
+	InputPassiveMotionCallback m_PassiveMotionCallback;
 
 	// list that records input events
 	EventList m_lEvents;
