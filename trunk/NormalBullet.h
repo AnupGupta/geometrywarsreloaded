@@ -5,6 +5,7 @@
 #include "Helper.h"
 
 class Timer;
+class RandomExplosionEmitter;
 
 class NormalBullet : public Movable
 {
@@ -26,13 +27,7 @@ public:
 	}
 
 	void Shoot (const Vector2& initialPosition,
-		float rotation, float velocity)
-	{
-		m_vPosition = initialPosition;
-		m_fRotation = rotation;
-		m_vVelocity = Helper::AsVector(m_fRotation) * velocity;
-		m_bShot = true;
-	};
+		float rotation, float velocity);
 
 	bool IsShot() const
 	{
@@ -45,6 +40,7 @@ private:
 	float m_fVelocity;
 	bool  m_bShot;
 	Timer* m_pLifeTimer;
+	RandomExplosionEmitter* m_pExplosionEmitter;
 
 	
 };

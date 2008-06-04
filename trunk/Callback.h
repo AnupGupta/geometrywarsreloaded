@@ -22,6 +22,8 @@
 
 #define Callback(signature) boost::function<signature> 
 #define BindFunc(className, funcName, object) boost::bind(&className::funcName, object)
+#define BindFuncOneArg(className, funcName, object) boost::bind(&className::funcName, object, _1)
+#define BindFuncTwoArg(className, funcName, object) boost::bind(&className::funcName, object, _1, _2)
 
 
 #endif

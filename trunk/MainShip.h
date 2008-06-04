@@ -6,6 +6,8 @@
 
 class NormalBullet;
 class TargetArrow;
+class ParticleEmitter;
+class Timer;
 
 class MainShip : public Ship
 {
@@ -16,6 +18,7 @@ public:
 
 	bool Init();
 	void Update();
+	void UpdateTimeDependent(float dt);
 	void Reset();
 	void Shutdown();
 
@@ -89,6 +92,7 @@ public:
 		m_bAlive = value;
 	}
 
+	void TargetChange(int x, int y);
 	void ShootNormal();
 
 private:
@@ -106,10 +110,16 @@ private:
 
 	bool m_bAlive;
 
+	float m_fPrevMouseX;
+	float m_fPrevMouseY;
+
 	const unsigned int m_numBullets;
 	BulletList m_bullets;
 
 	TargetArrow* m_pTargetArrow;
+	ParticleEmitter* m_pTrail;
+	Timer* m_pShootTimer;
+
 
 	void SetInterested();
 	void HandleEvent(Event* const e);

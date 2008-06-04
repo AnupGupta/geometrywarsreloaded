@@ -9,10 +9,13 @@
 #include "MainShip.h"
 #include "Renderable.h"
 #include "ParticleEmitter.h"
+#include "MultiExplosionEmitter.h"
+#include "CircleExplosionEmitter.h"
 #include <windows.h>
 #include <time.h>
 
 GameApp* GameApp::ms_pInstance = 0;
+
 //--------------------------------------------------
 /**
 * Ctor
@@ -102,6 +105,7 @@ bool GameApp::Init()
 
 	AddObject(m_pPlayerShip);
 
+	//AddObject(new MultiExplosionEmitter());
 	return true;
 }
 //--------------------------------------------------
@@ -121,30 +125,37 @@ bool GameApp::Update()
 
 	UpdateTime();
 
+	float tempAccum;
+	float tempTotalTime;
+
 	ObjectList::iterator objectIt = m_objects.begin();
 	for (; objectIt != m_objects.end(); ++objectIt)
 	{
 		GameObject* object = (*objectIt);
 		object->Update();
-	}
 
-	// update the entities using a fixed timestep
-	while (m_fTimeAccum >= m_fcTimeStep)
-	{
-		// update game entities
-		for (objectIt = m_objects.begin();
-			objectIt != m_objects.end(); ++objectIt)
+		// update the entities using a fixed timestep
+		
+		tempAccum = m_fTimeAccum;
+		tempTotalTime = m_fTotalTime;
+		
+		while (tempAccum >= m_fcTimeStep)
 		{
-			GameObject* object = (*objectIt);
 			object->UpdateTimeDependent(m_fcTimeStep);
-		}
 
-		// increase total time
-		m_fTotalTime += m_fcTimeStep;
-		// decrease time accumulator
-		m_fTimeAccum -= m_fcTimeStep;		
+			// increase total time
+			tempTotalTime += m_fcTimeStep;
+			// decrease time accumulator
+			tempAccum -= m_fcTimeStep;		
+		}
 	}
 
+	m_fTimeAccum = tempAccum;
+	m_fTotalTime = tempTotalTime;
+
+	
+
+	
 	return true;
 }
 
@@ -258,6 +269,9 @@ void GameApp::AssignKeys()
 
 	m_pInputManager->AssignFuncKeyUp
 		(' ', BindFunc(MainShip, ShootNormal, m_pPlayerShip));
+
+	m_pInputManager->AssignMousePassiveMotion(
+		BindFuncTwoArg(MainShip, TargetChange, m_pPlayerShip));
 }
 
 //--------------------------------------------------

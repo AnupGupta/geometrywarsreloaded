@@ -4,8 +4,16 @@
 #include "AddRenderableEvent.h"
 #include "RemoveRenderableEvent.h"
 #include "EventManager.h"
+#include "Texture.h"
+//#include "TextureLoader.h"
+#include "LoaderBmpGL.h"
+#include "LoaderTgaGL.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include <gl\glut.h>
+#include <assert.h>
 
+using namespace std;
 
 Renderer* Renderer::ms_pInstance = 0;
 //--------------------------------------------------
@@ -26,7 +34,31 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 
+	SortedMap::iterator sortedIt = m_sorted.begin();
+	for (; sortedIt != m_sorted.end(); ++sortedIt)
+	{
+		RenderableList* renderList = sortedIt->second;
+		renderList->clear();
+		delete renderList;
+	}
+	m_sorted.clear();
+
 	m_renderables.clear();
+	TextureMap::iterator it = m_textures.begin();
+	for (; it != m_textures.end(); ++it)
+	{
+		Texture* texture = it->second;
+		if (texture->GetFileType() == Texture::FILETYPE_BMP)
+		{
+			LoaderBmpGL::Unload(texture);
+		}
+		else if (texture->GetFileType() == Texture::FILETYPE_TGA)
+		{
+			LoaderTgaGL::Unload(texture);
+		}
+
+	}
+	m_textures.clear();
 }
 
 
@@ -64,6 +96,8 @@ bool Renderer::Init()
 {
 	EventManager::GetInstance()->Register(this);
 
+	LoadTextures();
+
 	return IsVBOExtensionSupported();
 }
 //--------------------------------------------------
@@ -74,14 +108,36 @@ bool Renderer::Init()
 void Renderer::Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
 	
+	glEnable(GL_TEXTURE_2D);
+	SortedMap::iterator sortedIt = m_sorted.begin();
+	for (; sortedIt != m_sorted.end(); ++sortedIt)
+	{
+		RenderableList* renderList = sortedIt->second;
+		glBindTexture(GL_TEXTURE_2D, sortedIt->first->GetId());
+
+		RenderableList::iterator it = renderList->begin();
+		for (; it != renderList->end(); ++it)
+		{
+			(*it)->RenderDefault();
+		}
+	}
+	glDisable(GL_TEXTURE_2D);
+
 	RenderableList::iterator it = m_renderables.begin();
 	for (; it != m_renderables.end(); ++it)
 	{
 		Renderable* renderable = (*it);
-		renderable->Render();
+		if (!renderable->GetTexture())
+		{
+			renderable->RenderDefault();
+		}
+
 	}
 
+	glDisable(GL_DEPTH_TEST);
 	glutSwapBuffers();
 }
 
@@ -130,7 +186,15 @@ bool Renderer::AddRenderable(Renderable *renderable)
 				return false;
 		}
 		
+		Texture* texture = renderable->GetTexture();
+		if (texture)
+		{
+			BindRenderableToTexture(texture, renderable);
+		}
+
 		m_renderables.push_back(renderable);
+		
+		
 		return true;
 		
 	}
@@ -145,19 +209,99 @@ bool Renderer::AddRenderable(Renderable *renderable)
 **/
 void Renderer::RemoveRenderable(Renderable *renderable)
 {
-	if(renderable)
+	assert (renderable);
+
+	RenderableList::iterator it = m_renderables.begin();
+	for (; it != m_renderables.end(); ++it)
 	{
-		RenderableList::iterator it = m_renderables.begin();
-		for (; it != m_renderables.end(); ++it)
+		Renderable* r = (*it);
+		if (r == renderable)
 		{
-			Renderable* r = (*it);
-			if (r == renderable)
+			Texture* texture = r->GetTexture();
+			if (texture)
 			{
-				m_renderables.erase(it);
-				return;
+				UnbindRenderableFromTexture(texture, r);
 			}
+			m_renderables.erase(it);
+			return;
 		}
 	}
+}
+
+//--------------------------------------------------
+/**
+* Gets a texture by name
+*
+**/
+Texture* Renderer::GetTexture(const std::string& name)
+{
+	TextureMap::iterator it = m_textures.find(name);
+	if (it != m_textures.end())
+	{
+		return it->second;
+	}
+	
+	return 0;
+}
+
+//--------------------------------------------------
+/**
+* Loads all textures from the textures folder
+*
+**/
+Texture* Renderer::LoadTextures()
+{
+	// get all textures from textures directory
+	WIN32_FIND_DATA fd;
+	DWORD dwAttr = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
+	HANDLE hFind = FindFirstFile( "Assets/Textures/*.bmp*", &fd);
+	if(hFind != INVALID_HANDLE_VALUE)
+	{
+		int count = 0;
+		do
+		{
+			if( !(fd.dwFileAttributes & dwAttr))
+			{
+				string longName("Assets/Textures/");
+				longName += fd.cFileName;
+				Texture* t = LoaderBmpGL::Load(longName.c_str(), false);
+				if (t)
+				{
+					string shortName(fd.cFileName);
+					
+					m_textures.insert(make_pair(shortName.substr(0, shortName.length() - 4), t));
+				}
+			}
+			
+		}while( FindNextFile( hFind, &fd));
+		FindClose( hFind);
+
+	}
+	hFind = FindFirstFile( "Assets/Textures/*.tga*", &fd);
+	if(hFind != INVALID_HANDLE_VALUE)
+	{
+		int count = 0;
+		do
+		{
+			if( !(fd.dwFileAttributes & dwAttr))
+			{
+				string longName("Assets/Textures/");
+				longName += fd.cFileName;
+				Texture* t = LoaderTgaGL::Load(longName.c_str(), false);
+				if (t)
+				{
+					string shortName(fd.cFileName);
+
+					m_textures.insert(make_pair(shortName.substr(0, shortName.length() - 4), t));
+				}
+			}
+
+		}while( FindNextFile( hFind, &fd));
+		FindClose( hFind);
+
+	}
+
+	return 0;
 }
 
 //--------------------------------------------------
@@ -238,4 +382,54 @@ bool Renderer::IsVBOExtensionSupported()
 		pszStart = pszTerminator;
 	}
 	return false;
+}
+
+//--------------------------------------------------
+/**
+* Pairs a renderable with a texture for sorting
+*
+**/
+void Renderer::BindRenderableToTexture(Texture* texture, 
+									   Renderable* renderable)
+{
+	assert(texture);
+	assert(renderable);
+
+	SortedMap::iterator it = m_sorted.find(texture);
+	if (it != m_sorted.end())
+	{
+		RenderableList* renderList = it->second;
+		RenderableList::iterator renderIt = renderList->begin();
+		for (; renderIt != renderList->end(); ++renderIt)
+		{
+			if (renderable == (*renderIt))
+				return;
+		}
+
+		renderList->push_back(renderable);
+	}
+	else
+	{
+		RenderableList* renderList = new RenderableList();
+		renderList->push_back(renderable);
+		m_sorted.insert(make_pair(texture, renderList));
+	}
+}
+
+//--------------------------------------------------
+/**
+* Removes a renderable from its texture
+*
+**/
+void Renderer::UnbindRenderableFromTexture(Texture* texture, 
+									   Renderable* renderable)
+{
+	assert(texture);
+	assert(renderable);
+
+	SortedMap::iterator it = m_sorted.find(texture);
+	if (it != m_sorted.end())
+	{
+		it->second->remove(renderable);
+	}
 }
