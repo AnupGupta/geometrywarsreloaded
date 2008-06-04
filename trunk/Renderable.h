@@ -6,6 +6,8 @@ class GameObject;
 #include "Color.h"
 #include <map>
 #include <list>
+#include "Vector.h"
+using namespace mth;
 
 class Texture;
 
@@ -52,8 +54,6 @@ public:
 	}
 
 protected:
-
-	
 
 	const GameObject& m_rParent;
 	bool m_bInitialized;

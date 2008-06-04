@@ -13,6 +13,7 @@
 #include <windows.h>
 #include "Renderer.h"
 #include "Timer.h"
+#include "Movable.h"
 #include <gl\glut.h>
 //--------------------------------------------------
 /**
@@ -58,10 +59,12 @@ MainShip::~MainShip()
 **/
 bool MainShip::Init()
 {
+	Ship::Init();
+
 	m_pRenderable = new MainShipRenderable(*this);
 	m_pRenderable->SetTexture(Renderer::GetInstance()->GetTexture("ship"));
 	
-	for (int i=0; i<m_numBullets; i++)
+	for (unsigned int i=0; i<m_numBullets; i++)
 	{	
 		NormalBullet* bullet = new NormalBullet;
 		if (!bullet->Init())
@@ -100,35 +103,38 @@ bool MainShip::Init()
 **/
 void MainShip::Update()
 {
+
 	m_pTrail->SetPosition(m_vPosition - Vector2(0.0f, 2.0f));
 	float shipSpeed = 10.0f;
+	const Vector2& velocity = m_pMovable->GetVelocity();
+
 	if (m_bMoveUp && !m_bStopMoveUp)
 	{
-		SetVelocity(Vector2(m_vVelocity.x, shipSpeed));
+		m_pMovable->SetVelocity(Vector2(velocity.x, shipSpeed));
 	}
 	else if (m_bMoveDown && !m_bStopMoveDown)
 	{
-		SetVelocity(Vector2(m_vVelocity.x, -shipSpeed));
+		m_pMovable->SetVelocity(Vector2(velocity.x, -shipSpeed));
 	}
 	else
 	{
-		SetVelocity(Vector2(m_vVelocity.x, 0.0f));
+		m_pMovable->SetVelocity(Vector2(velocity.x, 0.0f));
 	}
 
 	if (m_bMoveLeft && !m_bStopMoveLeft)
 	{
-		SetVelocity(Vector2(-shipSpeed, m_vVelocity.y));
+		m_pMovable->SetVelocity(Vector2(-shipSpeed, velocity.y));
 	}
 	else if (m_bMoveRight && !m_bStopMoveRight)
 	{
-		SetVelocity(Vector2(shipSpeed, m_vVelocity.y));
+		m_pMovable->SetVelocity(Vector2(shipSpeed, velocity.y));
 	}
 	else
 	{
-		SetVelocity(Vector2(0.0f, m_vVelocity.y));
+		m_pMovable->SetVelocity(Vector2(0.0f, velocity.y));
 	}
 
-	if (m_vVelocity.Length() < 0.01f)
+	if (velocity.Length() < 0.01f)
 	{
 		m_pTrail->StopEmitting();
 	}
@@ -137,7 +143,7 @@ void MainShip::Update()
 		m_pTrail->StartEmitting();
 	}
 
-	Vector2 m_vDir = m_vVelocity.Normalized();
+	Vector2 m_vDir = velocity.Normalized();
 	m_fRotation = atan2(m_vDir.y, m_vDir.x)*mth::TO_DEG;
 
 }
@@ -149,6 +155,7 @@ void MainShip::Update()
 **/
 void MainShip::UpdateTimeDependent(float dt)
 {
+	
 	Ship::UpdateTimeDependent(dt);
 
 	m_pShootTimer->Update(dt);

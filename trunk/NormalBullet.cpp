@@ -7,6 +7,7 @@
 #include "CircleExplosionEmitter.h"
 #include "RandomExplosionEmitter.h"
 #include "Renderer.h"
+#include "Movable.h"
 #include "Timer.h"
 //--------------------------------------------------
 /**
@@ -40,6 +41,7 @@ NormalBullet::~NormalBullet()
 **/
 bool NormalBullet::Init()
 {
+	m_pMovable = new Movable(*this);
 	m_pLifeTimer = new Timer(0.5f);
 	m_pRenderable = new NormalBulletRenderable(*this);
 	m_pRenderable->SetTexture(Renderer::GetInstance()->GetTexture("laser"));
@@ -84,7 +86,7 @@ void NormalBullet::UpdateTimeDependent(float dt)
 		}
 		else
 		{
-			Movable::UpdateTimeDependent(dt);
+			GameObject::UpdateTimeDependent(dt);
 		}
 	}
 }
@@ -122,7 +124,7 @@ void NormalBullet::Shoot (const Vector2& initialPosition,
 {
 	m_vPosition = initialPosition;
 	m_fRotation = rotation;
-	m_vVelocity = Helper::AsVector(m_fRotation) * velocity;
+	m_pMovable->SetVelocity(Helper::AsVector(m_fRotation) * velocity);
 	m_bShot = true;
 	m_pExplosionEmitter->StartEmitting();
 	m_pExplosionEmitter->SetSystemLife(-1.0f);

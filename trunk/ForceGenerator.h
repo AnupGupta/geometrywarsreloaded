@@ -1,7 +1,7 @@
 #ifndef FORCEGENERATOR_H
 #define FORCEGENERATOR_H
 
-#include "Vector.h"
+class Movable;
 
 class ForceGenerator
 {
@@ -16,8 +16,7 @@ public:
 
 	}
 
-	virtual void UpdateForce (mth::Vector2& force,
-		const mth::V) = 0;
+	virtual void UpdateForce (Movable* movable) = 0;
 
 
 };

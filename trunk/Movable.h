@@ -1,41 +1,45 @@
 #ifndef MOVABLE_H
 #define MOVABLE_H
 
-#include "GameObject.h"
+class GameObject;
+#include "Vector.h"
 
-class Movable : public GameObject
+
+class Movable 
 {
 public:
 	
-	Movable();
+	Movable(GameObject& parent);
 	virtual ~Movable();
 
-	virtual bool Init() = 0;
-	
-	virtual void Shutdown() = 0;
+	void Update(float dt);
 
-	virtual void Reset();
-
-	virtual void Update() = 0;
-
-	virtual void UpdateTimeDependent(float dt);
-
-	virtual ObjectType GetType() const
+	const mth::Vector2& GetPosition() const
 	{
-		return kObjectMovable;
+		return m_vPosition;
 	}
 
-	const Vector2& GetVelocity() const
+	float GetRotation() const
+	{
+		return m_fRotation;
+	}
+
+	void SetPosition(const mth::Vector2& position)
+	{
+		m_vPosition = position;
+	}
+
+	const mth::Vector2& GetVelocity() const
 	{
 		return m_vVelocity;
 	}
 
-	const Vector2& GetAcceleration() const
+	const mth::Vector2& GetAcceleration() const
 	{
 		return m_vAcceleration;
 	}
 
-	const Vector2& GetForce() const
+	const mth::Vector2& GetForce() const
 	{
 		return m_vForce;
 	}
@@ -75,12 +79,12 @@ public:
 		m_fInertia = inertia;
 	}
 
-	void SetAcceleration(const Vector2& acc)
+	void SetAcceleration(const mth::Vector2& acc)
 	{
 		m_vAcceleration = acc;
 	}
 
-	void SetVelocity (const Vector2& vel)
+	void SetVelocity (const mth::Vector2& vel)
 	{
 		m_vVelocity = vel;
 	}
@@ -94,7 +98,7 @@ public:
 		m_fAngularVelocity = angVel;
 	}
 
-	void SetForce(const Vector2& force)
+	void SetForce(const mth::Vector2& force)
 	{
 		m_vForce = force;
 	}
@@ -107,15 +111,21 @@ public:
 
 protected:
 
-	Vector2 m_vVelocity;
-	Vector2 m_vAcceleration;
-	Vector2 m_vForce;
+	mth::Vector2 m_vPosition;
+	mth::Vector2 m_vVelocity;
+	mth::Vector2 m_vAcceleration;
+	mth::Vector2 m_vForce;
+	float   m_fRotation;
 	float m_fAngularVelocity;
 	float m_fAngularAcceleration;
 	float m_fMass;
 	float m_fInertia;
 	float m_fTorque;
 
+	GameObject& m_rParent;
+
+	
+	void Integrate (float dt);
 	
 };
 

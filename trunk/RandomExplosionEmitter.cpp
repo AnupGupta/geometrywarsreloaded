@@ -1,6 +1,10 @@
 #include "RandomExplosionEmitter.h"
 #include "Renderer.h"
 #include "Particle.h"
+#include "Movable.h"
+
+using namespace mth;
+
 //--------------------------------------------------
 /**
 * Ctor
@@ -37,7 +41,7 @@ void RandomExplosionEmitter::SetInitialVelocity(Particle& particle)
 	float vx = (float)(rand()%10 - 5);
 	float vy = (float)(rand()%10 - 5);
 
-	particle.SetVelocity(Vector2(vx, vy));
+	particle.GetMovable()->SetVelocity(Vector2(vx, vy));
 }
 
 //--------------------------------------------------

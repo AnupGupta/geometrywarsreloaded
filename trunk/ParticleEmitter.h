@@ -1,13 +1,13 @@
 #ifndef PARTICLEEMITTER_H
 #define PARTICLEEMITTER_H
 
-#include "Movable.h"
+#include "GameObject.h"
 #include "Timer.h"
 
 class Particle;
 class Texture;
 
-class ParticleEmitter : public Movable
+class ParticleEmitter : public GameObject
 {
 public:
 

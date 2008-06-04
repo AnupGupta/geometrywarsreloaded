@@ -4,7 +4,7 @@
 #include "EventManager.h"
 #include "RemoveObjectEvent.h"
 #include "Helper.h"
-
+#include "Movable.h"
 //--------------------------------------------------
 /**
 * Ctor
@@ -32,6 +32,7 @@ TargetArrow::~TargetArrow()
 **/
 bool TargetArrow::Init()
 {
+	m_pMovable = new Movable(*this);
 	m_pRenderable = new ArrowRenderable(*this);
 	m_pRenderable->SetColor(Color(1.0f, 0.0f, 0.0f, 1.0f));
 	return m_bInitialized = true;

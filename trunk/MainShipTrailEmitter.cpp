@@ -3,6 +3,9 @@
 #include "Particle.h"
 #include "Helper.h"
 #include "MainShip.h"
+#include "Movable.h"
+
+using namespace mth;
 //--------------------------------------------------
 /**
 * Ctor
@@ -40,7 +43,7 @@ void MainShipTrailEmitter::SetInitialVelocity(Particle& particle)
 	
 	if (m_pParentShip)
 	{
-		mth::Vector2 velocity = -m_pParentShip->GetVelocity();
+		mth::Vector2 velocity = -m_pParentShip->GetMovable()->GetVelocity();
 		float rotation = velocity.Length();
 		
 		switch (m_iParticleWave)
@@ -72,7 +75,7 @@ void MainShipTrailEmitter::SetInitialVelocity(Particle& particle)
 		m_iParticleWave = m_iParticleWave == 3 ?
 			0 : m_iParticleWave + 1;
 
-		particle.SetVelocity(Vector2(velocity.x, velocity.y));
+		particle.GetMovable()->SetVelocity(Vector2(velocity.x, velocity.y));
 	}
 	
 }

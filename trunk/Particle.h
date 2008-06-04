@@ -1,18 +1,26 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#include "Vector.h"
+#include "GameObject.h"
 #include "Color.h"
 
-
-class Particle 
+class Particle : public GameObject
 {
 public:
 
 	Particle();
 	~Particle();
 
-	void Update(float dt);
+	bool Init();
+	void Update();
+	void UpdateTimeDependent(float dt);
+	void Shutdown();
+	void Reset();
+
+	ObjectType GetType() const
+	{
+		return kObjectParticle;
+	}
 
 	void SetTotalEnergy(float energy)
 	{
@@ -31,16 +39,6 @@ public:
 		
 	}
 
-	void SetVelocity (const mth::Vector2& vel)
-	{
-		m_vVelocity = vel;
-	}
-
-	void SetPosition (const mth::Vector2& pos)
-	{
-		m_vPosition = pos;
-	}
-
 	bool Dead() const
 	{
 		return !m_bAlive;
@@ -51,16 +49,6 @@ public:
 		m_bAlive = true;
 	}
 
-	const mth::Vector2& GetPosition() const
-	{
-		return m_vPosition;
-	}
-
-	const mth::Vector2& GetVelocity() const
-	{
-		return m_vVelocity;
-	}
-
 	void SetColor(const Color& color);
 	const Color& GetColor() const
 	{
@@ -69,8 +57,6 @@ public:
 
 private:
 
-	mth::Vector2 m_vVelocity;
-	mth::Vector2 m_vPosition;
 	float m_fEnergy;
 	float m_fTotalEnergy;
 	float m_fInvTotalEnergy;

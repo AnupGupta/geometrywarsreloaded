@@ -1,5 +1,6 @@
 #include "GameObject.h"
 #include "Renderable.h"
+#include "Movable.h"
 
 //--------------------------------------------------
 /**
@@ -7,8 +8,9 @@
 *
 **/
 GameObject::GameObject()
-: m_fRotation(0.0f),
-  m_pRenderable(0),
+: m_pRenderable(0),
+  m_pMovable(0),
+  m_fRotation(0.0f),
   m_bInitialized(false)
 {
 
@@ -21,7 +23,8 @@ GameObject::GameObject()
 **/
 GameObject::~GameObject()
 {
-
+	if (m_pMovable)
+		delete m_pMovable;
 }
 
 //--------------------------------------------------
@@ -31,7 +34,18 @@ GameObject::~GameObject()
 **/
 void GameObject::Reset()
 {
-	m_vPosition = Vector2(0.0f, 0.0f);
-	m_fRotation = 0.0f;
+
 }
 
+//--------------------------------------------------
+/**
+* Updates movables
+*
+**/
+void GameObject::UpdateTimeDependent(float dt)
+{
+	if (m_pMovable)
+	{
+		m_pMovable->Update(dt);
+	}
+}
